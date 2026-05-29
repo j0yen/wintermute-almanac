@@ -51,6 +51,10 @@ wm-almanac next
 wm-almanac next --format json   # → {"id":"…","fire_ts_unix":…,"label":"…"}
 ```
 
+## Recent
+
+- **v0.2.0** (2026-05-29): Added `wm-almanac daemon` tick mode — `--once` for systemd-user timer, long-running loop with SIGINT/SIGTERM, `PublishSink` trait, DST-correct re-arm, `wm.health.almanac` degrade hooks.
+
 ## Acceptance tests
 
 All 9 acceptance criteria from the PRD pass under `cargo test --release`:

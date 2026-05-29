@@ -78,18 +78,35 @@ impl PublishSink for LogSink {
 /// A clock that returns the current UTC time.
 ///
 /// Tests supply a fixed or advancing clock; production uses [`SystemClock`].
+/// The test for AC4 (re-arm) exercises this pattern by calling
+/// [`soonest_enabled`] with advancing `now` values directly.
+// Allow dead_code: Clock + SystemClock are used in tests and serve as the
+// extension point for future testable daemon loops.
+#[allow(dead_code)]
 pub trait Clock {
     /// Return "now".
     fn now(&self) -> DateTime<Utc>;
 }
 
 /// The real system UTC clock.
+#[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct SystemClock;
 
 impl Clock for SystemClock {
     fn now(&self) -> DateTime<Utc> {
         Utc::now()
+    }
+}
+
+/// A fixed-time clock for testing — always returns the same instant.
+#[cfg(test)]
+pub struct FixedClock(pub DateTime<Utc>);
+
+#[cfg(test)]
+impl Clock for FixedClock {
+    fn now(&self) -> DateTime<Utc> {
+        self.0
     }
 }
 
@@ -508,6 +525,49 @@ mod tests {
         for (topic, _) in &sink.events {
             assert_eq!(topic, "wm.health.almanac");
         }
+    }
+
+    // AC4: After a Daily entry fires, re-arming via `soonest_enabled` with an
+    // advanced clock yields the *same* entry firing at the next day's tick.
+    //
+    // Uses the injected-clock pattern: call `soonest_enabled` with two different
+    // `now` values — one just before the first fire, one just after — and assert
+    // the second call yields a fire instant 24 h later.
+    #[test]
+    fn ac4_daily_entry_rearms_to_next_day() {
+        use chrono::Duration as ChronoDuration;
+
+        // Daily at 08:00 UTC — pick a concrete date far enough ahead that it
+        // isn't "today" depending on when the test runs.
+        let fire_day_1 = Utc.with_ymd_and_hms(2030, 1, 15, 8, 0, 0).unwrap();
+        let fire_day_2 = Utc.with_ymd_and_hms(2030, 1, 16, 8, 0, 0).unwrap();
+
+        let entry = make_entry(
+            "id-daily-rearm",
+            "Morning pills",
+            "Take your pills",
+            Recurrence::Daily,
+            "08:00",
+            "UTC",
+            true,
+            Category::Med,
+        );
+
+        // Before the first fire: the entry is due at 08:00 on day 1.
+        let now_before = Utc.with_ymd_and_hms(2030, 1, 15, 7, 59, 0).unwrap();
+        let entries = [entry.clone()];
+        let (ts1, _) = soonest_enabled(&entries, now_before)
+            .expect("entry should be found before first fire");
+        assert_eq!(ts1, fire_day_1, "first fire should be 08:00 on day 1");
+
+        // Simulate firing: advance clock to 1 second past the fire instant.
+        let now_after_fire = fire_day_1 + ChronoDuration::seconds(1);
+        let (ts2, _) = soonest_enabled(&entries, now_after_fire)
+            .expect("entry should re-arm to next day after firing");
+        assert_eq!(
+            ts2, fire_day_2,
+            "after firing at day 1 08:00, the same Daily entry re-arms to day 2 08:00"
+        );
     }
 
     // AC6: next-fire > 1 day in the past emits wm.health.almanac.

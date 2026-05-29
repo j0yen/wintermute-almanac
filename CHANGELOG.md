@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.0 — 2026-05-29
+
+Complete PRD-almanac-tick-daemon acceptance criteria with injected-clock re-arm test (AC4), FixedClock test helper, and allow(dead_code) on Clock/SystemClock extension points. Adds ac4_daily_entry_rearms_to_next_day test proving re-arm works via soonest_enabled with two advancing now values.
+
 ## v0.2.0 — 2026-05-29
 
 Add `wm-almanac daemon` tick-daemon mode that fires entries at their scheduled

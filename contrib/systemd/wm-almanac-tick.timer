@@ -1,0 +1,12 @@
+[Unit]
+Description=wm-almanac tick timer — fire due routine entries every minute
+After=agorabus.service
+Wants=agorabus.service wm-almanac-tick.service
+
+[Timer]
+OnCalendar=*:0/1
+Persistent=true
+Unit=wm-almanac-tick.service
+
+[Install]
+WantedBy=timers.target

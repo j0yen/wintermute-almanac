@@ -1,7 +1,7 @@
 //! Computation of the next-fire instant for the soonest enabled entry.
 
 use anyhow::{Context, Result};
-use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Timelike, Utc, Weekday};
+use chrono::{DateTime, Datelike, NaiveDate, TimeZone, Utc, Weekday};
 use chrono_tz::Tz;
 use serde::Serialize;
 
@@ -32,7 +32,7 @@ pub fn next_due(entries: &[Entry]) -> Result<Option<NextDue>> {
         if !entry.opt_in {
             continue;
         }
-        let fire = next_fire(entry, now).with_context(|| {
+        let fire = next_fire_for(entry, now).with_context(|| {
             format!(
                 "computing next fire for entry '{}' (id {})",
                 entry.label, entry.id
@@ -58,7 +58,7 @@ pub fn next_due(entries: &[Entry]) -> Result<Option<NextDue>> {
 ///
 /// # Errors
 /// Returns an error if the timezone string is invalid.
-fn next_fire(entry: &Entry, now: DateTime<Utc>) -> Result<Option<DateTime<Utc>>> {
+pub fn next_fire_for(entry: &Entry, now: DateTime<Utc>) -> Result<Option<DateTime<Utc>>> {
     let tz: Tz = entry
         .tz
         .parse::<Tz>()

@@ -70,7 +70,10 @@ serde_json = "1"
 # Error handling
 anyhow = "1"
 thiserror = "1"
+# Async runtime for daemon sleep loop
+tokio = { version = "1", features = ["rt", "time", "signal", "macros"] }
 
 [dev-dependencies]
 proptest = "1"
 tempfile = "3"
+tokio = { version = "1", features = ["rt", "time", "macros"] }

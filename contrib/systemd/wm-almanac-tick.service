@@ -1,0 +1,10 @@
+[Unit]
+Description=wm-almanac one-shot tick — fire any due routine entry to agorabus
+After=agorabus.service
+Wants=agorabus.service
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/wm-almanac daemon --once
+StandardOutput=journal
+StandardError=journal

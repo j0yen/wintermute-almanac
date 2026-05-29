@@ -1,17 +1,20 @@
 //! `wm-almanac` — local recurring-routine store for the wintermute elder-care system.
 //!
-//! Subcommands: add, list, remove, enable, disable, next.
+//! Subcommands: add, list, remove, enable, disable, next, daemon.
 
 #![warn(missing_docs)]
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use std::process::ExitCode;
+use std::time::Duration;
 
+mod daemon;
 mod entry;
 mod next;
 mod store;
 
+use daemon::{LogSink, run_daemon, run_once};
 use entry::{Category, Entry, Recurrence, parse_hhmm, parse_recurrence};
 use next::next_due;
 use store::Store;
@@ -92,6 +95,22 @@ enum Commands {
         #[arg(long, value_enum, default_value = "text")]
         format: OutputFormat,
     },
+
+    /// Run the tick daemon: sleep until the next entry is due and publish it.
+    ///
+    /// In long-running mode (default) the daemon loops indefinitely until
+    /// SIGINT or SIGTERM. With `--once` it fires at most one entry and exits;
+    /// suitable for a systemd-user timer (`OnCalendar=*:0/1`).
+    Daemon {
+        /// Fire at most one due entry (within 60 s of now) and exit.
+        #[arg(long, default_value_t = false)]
+        once: bool,
+
+        /// Window in seconds for `--once` mode: fire if entry is due within
+        /// this many seconds of the current time.
+        #[arg(long, default_value_t = 60)]
+        window_secs: u64,
+    },
 }
 
 /// Output format for list/next subcommands.
@@ -131,6 +150,7 @@ fn run() -> Result<()> {
         Commands::Enable { id } => cmd_enable(id),
         Commands::Disable { id } => cmd_disable(id),
         Commands::Next { format } => cmd_next(format),
+        Commands::Daemon { once, window_secs } => cmd_daemon(once, window_secs),
     }
 }
 
@@ -307,4 +327,20 @@ fn cmd_next(format: OutputFormat) -> Result<()> {
         },
     }
     Ok(())
+}
+
+fn cmd_daemon(once: bool, window_secs: u64) -> Result<()> {
+    let mut sink = LogSink;
+    if once {
+        let window = Duration::from_secs(window_secs);
+        let fired = run_once(None, &mut sink, window)?;
+        if fired {
+            eprintln!("wm-almanac daemon --once: fired one entry");
+        } else {
+            eprintln!("wm-almanac daemon --once: nothing due in window");
+        }
+        Ok(())
+    } else {
+        run_daemon(None, &mut sink)
+    }
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.0 — 2026-05-30
+
+Missed almanac entries surface to the caregiver. A missed acknowledgment (especially category=med) emits a normalized wm.almanac.missed envelope unconditionally, and bridges to wm.family.message via the kin channel when configured. Non-med categories require notify_on_miss=true to bridge. Bridge publish failures emit wm.health.almanac so silent medication-miss drops are impossible.
+
 ## v0.3.0 — 2026-05-29
 
 Complete PRD-almanac-tick-daemon acceptance criteria with injected-clock re-arm test (AC4), FixedClock test helper, and allow(dead_code) on Clock/SystemClock extension points. Adds ac4_daily_entry_rearms_to_next_day test proving re-arm works via soonest_enabled with two advancing now values.

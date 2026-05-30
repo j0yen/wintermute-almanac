@@ -53,6 +53,7 @@ wm-almanac next --format json   # → {"id":"…","fire_ts_unix":…,"label":"�
 
 ## Recent
 
+- **v0.4.0** (2026-05-30): Missed almanac entries surface to the caregiver via `wm.almanac.missed`; kin bridge emits `wm.family.message` for med-category misses; publish failures degrade to `wm.health.almanac` (no silent drops).
 - **v0.3.0** (2026-05-29): Completed almanac-tick-daemon AC4 — injected-clock re-arm test (`ac4_daily_entry_rearms_to_next_day`) proves `Daily` entries re-arm to next day via `soonest_enabled`; adds `FixedClock` test helper and `Clock`/`SystemClock` extension points.
 - **v0.2.0** (2026-05-29): Added `wm-almanac daemon` tick mode — `--once` for systemd-user timer, long-running loop with SIGINT/SIGTERM, `PublishSink` trait, DST-correct re-arm, `wm.health.almanac` degrade hooks.
 

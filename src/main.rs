@@ -11,6 +11,7 @@ use std::time::Duration;
 
 mod daemon;
 mod entry;
+mod missed;
 mod next;
 mod store;
 

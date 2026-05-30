@@ -3,6 +3,7 @@
 
 pub mod daemon;
 pub mod entry;
+pub mod missed;
 pub mod next;
 pub mod store;
 

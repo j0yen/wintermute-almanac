@@ -1,8 +1,8 @@
 # wintermute-almanac
 
-Local, offline store of recurring routine entries for the wintermute elder-care system.
+The schedule a voice-AI elder-care system reads from: a local, offline store of recurring routines — "the blue pill, every morning at 8."
 
-Wintermute has no place to record "the blue pill, every morning at 8." This crate creates that place. `wm-almanac` is a durable, credential-free CLI for managing scheduled routines (medications, meals, appointments, activities) — no network, no bus, no SecretService. It is the schedule model every other almanac PRD builds on.
+Everything else in the fleet can speak and listen, but nothing remembered *when* to speak. `wm-almanac` is that memory: a durable, credential-free CLI for recurring routines (medications, meals, appointments, activities), held in one TOML file with no network, no bus, and no SecretService. A small `daemon` mode sleeps until the next entry is due and publishes it. The rest of the almanac work builds on this schedule model.
 
 ## Features
 
@@ -49,7 +49,25 @@ wm-almanac remove <id>
 # Next due entry (used by the almanac tick daemon)
 wm-almanac next
 wm-almanac next --format json   # → {"id":"…","fire_ts_unix":…,"label":"…"}
+
+# Tick daemon: fire at most one due entry and exit (for a systemd-user timer)
+wm-almanac daemon --once
+# Or run it long-lived; it loops until SIGINT/SIGTERM
+wm-almanac daemon
 ```
+
+When an entry fires, the daemon publishes `wm.almanac.due`; an unacknowledged
+entry surfaces as `wm.almanac.missed`, and a missed `med`-category entry also
+emits `wm.family.message` to the caregiver. A publish failure degrades to
+`wm.health.almanac` rather than dropping silently. The systemd units in
+[`contrib/systemd/`](contrib/systemd) run the `--once` tick on a timer.
+
+## Where it fits
+
+Part of the wintermute voice-AI elder-care fleet. `wm-almanac` holds the
+schedule; the tick daemon turns due entries into bus messages other fleet
+components speak and act on. The kin bridge (`wm.family.message`) is how a
+missed medication reaches a family caregiver.
 
 ## Recent
 
